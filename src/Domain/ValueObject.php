@@ -1,10 +1,10 @@
 <?php
 /**
- * File name: BirdInterface.php
+ * File name: ValueObject.php
  * Project: project1
  * PHP version 5
  * @category  PHP
- * @package   Project1
+ * @package   Project1\Domain
  * @author    donbstringham <donbstringham@gmail.com>
  * @copyright 2016 © donbstringham
  * @license   http://opensource.org/licenses/MIT MIT
@@ -14,12 +14,16 @@
  * $LastChangedBy$
  */
 
-namespace Project1;
+namespace Project1\Domain;
 
-interface BirdInterface
+/**
+ * Interface ValueObject
+ * @category  PHP
+ * @package   Project1\Domain
+ * @author    donbstringham <donbstringham@gmail.com>
+ * @link      http://donbstringham.us
+ */
+interface ValueObject extends \JsonSerializable
 {
-    /**
-     * @return bool
-     */
-    public function hasFeathers();
+
 }

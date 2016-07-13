@@ -14,44 +14,90 @@
  */
 
 use Symfony\Component\HttpFoundation\Request;
+use \Symfony\Component\HttpFoundation\Response;
+use Project1\Domain\StringLiteral;
+use Project1\Domain\User;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$bill = new User(
+    new StringLiteral('bill@email.com'),
+    new StringLiteral('harris'),
+    new StringLiteral('bharris')
+);
+$bill->setId(new StringLiteral('1'));
+
+$charlie = new User(
+    new StringLiteral('charlie@email.com'),
+    new StringLiteral('fuller'),
+    new StringLiteral('cfuller')
+);
+$charlie->setId(new StringLiteral('2'));
+
+$dawn = new User(
+    new StringLiteral('dawn@email.com'),
+    new StringLiteral('brown'),
+    new StringLiteral('dbrown')
+);
+$dawn->setId(new StringLiteral('3'));
+
+$users = [
+    $bill,
+    $charlie,
+    $dawn
+];
+
 
 $app = new Silex\Application();
 
 $app->before(function (Request $request) {
-    $headers = $request->headers;
-    $token = $headers->get('Authorization');
+    $password = $request->getPassword();
+    $username = $request->getUser();
 
-    if ($token !== '1') {
-        $msg = __FILE__ . ': hey I do NOT know you get a valid dev token';
-        echo $msg;
-        throw new \RuntimeException($msg);
+    if ($username !== 'professor') {
+        $response = new Response();
+        $response->setStatusCode(401);
+
+        return $response;
+    }
+
+    if ($password !== '1234pass') {
+        $response = new Response();
+        $response->setStatusCode(401);
+
+        return $response;
     }
 });
 
 $app->get('/', function () use ($app) {
-    return '<h1>Welcome to Project 1</h1>';
+    return '<h1>Welcome to the Final Project</h1>';
 });
 
-$app->get('/hello/{name}', function ($name) use ($app) {
-    return '<p>Hello <b>' . $app->escape($name) . '</b></p>';
+$app->get('/users', function () use ($app, $users) {
+    $response = new Response();
+    $response->setStatusCode(200);
+    $response->setContent(json_encode($users));
+
+    return $response;
 });
 
-$app->get('/server', function (Request $request) use ($app) {
-    return '<h3>Web-server: ' . $request->server->get('SERVER_SOFTWARE') . '</h3>';
-});
+$app->get('/users/{id}', function ($id) use ($app, $users) {
+    $max = count($users);
+    for ($i = 0; $i < $max; $i++) {
+        $newId = new StringLiteral($id);
+        if ($newId->equal($users[$i]->getId())) {
+            $response = new Response();
+            $response->setStatusCode(200);
+            $response->setContent(json_encode($users[$i]));
 
-$app->get('/users', function () use ($app) {
-    $data = [
-        'count' => 2,
-        'users' => [
-            ['username' => 'joe00'],
-            ['username' => 'joe01']
-        ]
-    ];
+            return $response;
+        }
+    }
 
-    return json_encode($data);
+    $response = new Response();
+    $response->setStatusCode(404);
+
+    return $response;
 });
 
 $app->run();

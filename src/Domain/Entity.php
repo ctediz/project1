@@ -1,9 +1,10 @@
 <?php
 /**
- * File name: Dodo.php
+ * File name: Entity.php
  * Project: project1
  * PHP version 5
  * @category  PHP
+ * @package   Project1\Domain
  * @author    donbstringham <donbstringham@gmail.com>
  * @copyright 2016 © donbstringham
  * @license   http://opensource.org/licenses/MIT MIT
@@ -13,23 +14,30 @@
  * $LastChangedBy$
  */
 
-namespace Project1;
+namespace Project1\Domain;
 
 /**
- * Class Dodo
+ * Interface Entity
  * @category  PHP
+ * @package   Project1\Domain
  * @author    donbstringham <donbstringham@gmail.com>
  * @link      http://donbstringham.us
  */
-class Dodo extends Bird implements BirdInterface
+interface Entity extends \JsonSerializable
 {
-    public function __construct($speed = 2)
-    {
-        parent::__construct($speed);
-    }
+    /**
+     * @return string
+     */
+    public function __toString();
 
-    public function hasFeathers()
-    {
-        return true;
-    }
+    /**
+     * @return string
+     */
+    public function getId();
+
+    /**
+     * @param string $id
+     * @return $this
+     */
+    public function setId($id);
 }
