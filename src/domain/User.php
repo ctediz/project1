@@ -106,6 +106,6 @@ class User implements Entity
      */
     public function jsonSerialize()
     {
-       return $this->__toString();
+       return get_object_vars($this);
     }
 }
