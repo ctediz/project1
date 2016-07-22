@@ -44,12 +44,25 @@ class MysqlUserRepository implements UserRepository
     /**
      * @param \Project1\Domain\User $user
      * @return $this
+     * @throws \PDOException
      */
     public function add(User $user)
     {
-        $stmt = $this->driver->exec("INSERT BLAH");
-        $this->driver->prepare($stmt);
-        $stmt->exec();
+        $data =json_decode(json_encode($user));
+
+        try {
+            $this->driver->prepare(
+                'INSERT INTO users VALUES (NULL,?,?,?,?)'
+            )->execute($data);
+        } catch (\PDOException $e) {
+            if ($e->getCode() === 1062) {
+                // Take some action if there is a key constraint violation, i.e. duplicate name
+            } else {
+                throw $e;
+            }
+        }
+
+        return $this;
     }
 
     /**

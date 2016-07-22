@@ -16,6 +16,8 @@ services:
       MYSQL_ROOT_PASSWORD: docker
     volumes:
       - /var/lib/mysql
+    ports:
+      - "3306:3306"
   redisserver:
     image: redis
     volumes:
