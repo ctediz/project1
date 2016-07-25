@@ -1,9 +1,17 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: Jason
- * Date: 7/19/2016
- * Time: 8:58 PM
+ * File name: MysqlUserRepository.php
+ * Project: project1
+ * PHP version 5
+ * @category  PHP
+ * @package   Project1\Infrastructure
+ * @author    donbstringham <donbstringham@gmail.com>
+ * @copyright 2016 © donbstringham
+ * @license   http://opensource.org/licenses/MIT MIT
+ * @version   GIT: <git_id>
+ * @link      http://donbstringham.us
+ * $LastChangedDate$
+ * $LastChangedBy$
  */
 
 namespace Project1\Infrastructure;
@@ -12,10 +20,66 @@ use Project1\Domain\StringLiteral;
 use Project1\Domain\User;
 use Project1\Domain\UserRepository;
 
-class MySQLUserRepository implements UserRepository {
-    public function __construct()
-    {
+/**
+ * Class MysqlUserRepository
+ * @category  PHP
+ * @package   Project1\Infrastructure
+ * @author    donbstringham <donbstringham@gmail.com>
+ * @link      http://donbstringham.us
+ */
+class MysqlUserRepository implements UserRepository
+{
+    /** @var \PDO */
+    protected $driver;
 
+    /**
+     * MysqlUserRepository constructor
+     * @param \PDO $driver
+     */
+    public function __construct(\PDO $driver)
+    {
+        $this->driver = $driver;
+    }
+
+    /**
+     * @param \Project1\Domain\User $user
+     * @return $this
+     * @throws \PDOException
+     */
+    public function add(User $user)
+    {
+        $data =json_decode(json_encode($user));
+
+        try {
+            $this->driver->prepare(
+                'INSERT INTO users VALUES (NULL,?,?,?,?)'
+            )->execute($data);
+        } catch (\PDOException $e) {
+            if ($e->getCode() === 1062) {
+                // Take some action if there is a key constraint violation, i.e. duplicate name
+            } else {
+                throw $e;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param \Project1\Domain\StringLiteral $id
+     * @return $this
+     */
+    public function delete(StringLiteral $id)
+    {
+        // TODO: Implement delete() method
+    }
+
+    /**
+     * @return array
+     */
+    public function findAll()
+    {
+        // TODO: Implement findAll() method
     }
 
     /**
@@ -24,7 +88,7 @@ class MySQLUserRepository implements UserRepository {
      */
     public function findByEmail(StringLiteral $fragment)
     {
-        // TODO: Implement findByEmail() method.
+        // TODO: Implement findByEmail() method
     }
 
     /**
@@ -33,7 +97,7 @@ class MySQLUserRepository implements UserRepository {
      */
     public function findById(StringLiteral $id)
     {
-        // TODO: Implement findById() method.
+        // TODO: Implement findById() method
     }
 
     /**
@@ -42,7 +106,7 @@ class MySQLUserRepository implements UserRepository {
      */
     public function findByName(StringLiteral $fragment)
     {
-        // TODO: Implement findByName() method.
+        // TODO: Implement findByName() method
     }
 
     /**
@@ -51,25 +115,7 @@ class MySQLUserRepository implements UserRepository {
      */
     public function findByUsername(StringLiteral $username)
     {
-        // TODO: Implement findByUsername() method.
-    }
-
-    /**
-     * @param User $user
-     * @return $this
-     */
-    public function add(User $user)
-    {
-        // TODO: Implement add() method.
-    }
-
-    /**
-     * @param StringLiteral $id
-     * @return $this
-     */
-    public function delete(StringLiteral $id)
-    {
-        // TODO: Implement delete() method.
+        // TODO: Implement findByUsername() method
     }
 
     /**
@@ -77,7 +123,7 @@ class MySQLUserRepository implements UserRepository {
      */
     public function save()
     {
-        // TODO: Implement save() method.
+        // TODO: Implement save() method
     }
 
     /**
@@ -86,14 +132,6 @@ class MySQLUserRepository implements UserRepository {
      */
     public function update(User $user)
     {
-        // TODO: Implement update() method.
-    }
-
-    /**
-     * @return array
-     */
-    public function findAll()
-    {
-        // TODO: Implement findAll() method.
+        // TODO: Implement update() method
     }
 }

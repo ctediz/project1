@@ -7,20 +7,47 @@
  */
 
 namespace Project1\Infrastructure;
-
-
 use Project1\Domain\StringLiteral;
-use Project1\Domain\UserRepository;
 use Project1\Domain\User;
+use Project1\Domain\UserRepository;
 
+/**
+ * Class InMemoryUserRepository
+ * @category  PHP
+ * @package   Project1\Infrastructure
+ * @author    donbstringham <donbstringham@gmail.com>
+ * @link      http://donbstringham.us
+ */
 class InMemoryUserRepository implements UserRepository
 {
-    /** @var  array */
+    /** @var array */
     protected $storage;
 
+    /**
+     * InMemoryUserRepository constructor
+     */
     public function __construct()
     {
         $this->storage = [];
+    }
+
+    /**
+     * @param \Project1\Domain\User $newUser
+     * @return $this
+     */
+    public function add(User $newUser)
+    {
+        $this->storage[] = $newUser;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function count()
+    {
+        return count($this->storage);
     }
 
     /**
@@ -37,6 +64,7 @@ class InMemoryUserRepository implements UserRepository
                 $responseStorage[] = $user;
             }
         }
+
         return $responseStorage;
     }
 
@@ -52,6 +80,13 @@ class InMemoryUserRepository implements UserRepository
             if ($id->equal($user->getId())) {
                 return $user;
             }
+        }
+
+        /** @var \Project1\Domain\User $user */
+        foreach($this->storage as $user) {
+           if ($id->equal($user->getId())) {
+               return $user;
+           }
         }
 
         // if not found
@@ -92,20 +127,6 @@ class InMemoryUserRepository implements UserRepository
         return $responseStorage;
     }
 
-    /**
-     * @param User $user
-     * @return $this
-     */
-    public function add(User $user)
-    {
-        $this->storage[] = $user;
-        return $this;
-    }
-
-    /**
-     * @param StringLiteral $id
-     * @return $this
-     */
     public function delete(StringLiteral $id)
     {
         for($i = 0; $i < $this->count(); $i++) {
@@ -133,14 +154,6 @@ class InMemoryUserRepository implements UserRepository
         $this->delete($user->getId());
         $this->add($user);
         return $this;
-    }
-
-    /**
-     * @return int
-     */
-    public function count()
-    {
-        return count($this->storage);
     }
 
     /**

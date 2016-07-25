@@ -12,15 +12,13 @@
  * $LastChangedDate$
  * $LastChangedBy$
  */
-
-
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Pimple\Container;
 use Project1\Infrastructure\InMemoryUserRepository;
-use Project1\Infrastructure\MySQLUserRepository;
+use Project1\Infrastructure\MysqlUserRepository;
 use Project1\Domain\StringLiteral;
 use Project1\Domain\User;
-use Pimple\Container;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -55,7 +53,7 @@ $app->post('/auth/', function(Request $request) use ($app) {
     $response = new Response();
     $arrRequest = json_decode($request->getContent(), true);
 
-    if($arrRequest['username']) // verify user/password is valid
+    if ($arrRequest['username']) // verify user/password is valid
     {
         // no db access - service unavailable
 
@@ -65,30 +63,67 @@ $app->post('/auth/', function(Request $request) use ($app) {
         $response->setStatusCode(Response::HTTP_CREATED);
         $response->setContent("(verification code here)");
         return $response;
-    }
-    else // no content/missing username - un-processable
+    } else // no content/missing username - un-processable
     {
         $response->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
-        $response->setContent("Missing property: username");       // what to set content to?
+        $response->setContent("Missing property: username");
         return $response;
     }
 
-    // no storage - service unavailable
+    // no storage - service unavailable\
 });
 
-$app->delete('/users/{id}', function($id) use($dic) {
-    $response = new Response();
-    $response->headers->get('Content-Type', 'application/json');
-    $repo = $dic['repo-mem'];
-    $result = $repo->delete(new StringLiteral($id))->save();
-    if ($result === false) {
-        $response->setStatusCode(500);
-    } else {
-        $response->setStatusCode(200);
+$app->before(function (Request $request) {
+    $password = $request->getPassword();
+    $username = $request->getUser();
+
+    if ($username !== 'professor') {
+        $response = new Response();
+        $response->setStatusCode(401);
+
+        return $response;
     }
+
+    if ($password !== '1234pass') {
+        $response = new Response();
+        $response->setStatusCode(401);
+
+        return $response;
+    }
+});
+
+$app->get('/', function () {
+    return '<h1>Welcome to the Final Project</h1>';
+});
+
+$app->get('/ping/', function() use ($dic) {
+   $response = new Response();
+
+    $driver = $dic['db-driver'];
+    if (!$driver instanceof \PDO) {
+        $response->setStatusCode(500);
+        $msg = ['msg' => 'could not connect to the database'];
+        $response->setContent(json_encode($msg));
+
+        return $response;
+    }
+
+    $repo = $dic['repo-mysql'];
+    if (!$repo instanceof \Project1\Domain\UserRepository) {
+        $response->setStatusCode(500);
+        $msg = ['msg' => 'repository problem'];
+        $response->setContent(json_encode($msg));
+
+        return $response;
+    }
+
+    $response->setStatusCode(200);
+    $msg = ['msg' => 'pong'];
+    $response->setContent(json_encode($msg));
+
     return $response;
-})
-    ->before($before);
+
+});
 
 $app->get('/users/', function () use ($dic) {
     $response = new Response();
@@ -98,7 +133,7 @@ $app->get('/users/', function () use ($dic) {
     $response->setContent(json_encode($repo->findAll()));
     return $response;
 })
-->before($before);
+    ->before($before);
 
 $app->get('/users/{id}', function ($id) use ($dic) {
     $response = new Response();
@@ -113,7 +148,21 @@ $app->get('/users/{id}', function ($id) use ($dic) {
     $response->setContent(json_encode($user));
     return $response;
 })
-->before($before);
+    ->before($before);
+
+$app->delete('/users/{id}', function($id) use($dic) {
+    $response = new Response();
+    $response->headers->get('Content-Type', 'application/json');
+    $repo = $dic['repo-mem'];
+    $result = $repo->delete(new StringLiteral($id))->save();
+    if ($result === false) {
+        $response->setStatusCode(500);
+    } else {
+        $response->setStatusCode(200);
+    }
+    return $response;
+})
+    ->before($before);
 
 $app->post('/users/', function(Request $request) use ($dic) {
     $response = new Response();
@@ -146,13 +195,13 @@ $app->post('/users/', function(Request $request) use ($dic) {
 
     return $response;
 })
-->before($before);
+    ->before($before);
 
 $app->put('/users/{id}', function($id, Request $request) use($dic) {
     $response = new Response();
     $response->headers->get('Content-Type', 'application/json');
     $repo = $dic['repo-mem'];
-    
+
     $arrRequest = json_decode($request->getContent(),true);
 
     /** @var  $user Project1\Domain\User*/
@@ -193,7 +242,7 @@ $app->put('/users/{id}', function($id, Request $request) use($dic) {
     $response->setStatusCode(Response::HTTP_OK);
     return $response;
 })
-->before($before);
+    ->before($before);
 
 $app->post('/login/', function() use ($app) {
     $response = new Response();
@@ -223,35 +272,38 @@ $app->post('/login/', function() use ($app) {
     return $response;
     */
 })
-->before($before);
+    ->before($before);
 
 $app->run();
 
 function bootstrap()
 {
     $dic = new Container();
-    $dic['app'] = function() {
+
+    $dic['app'] = function () {
         return new Silex\Application();
     };
-    $dic['db-driver'] = function() {
+
+    $dic['db-driver'] = function () {
         $host = 'mysqlserver';
-        $db   = 'dockerfordevs';
+        $db = 'dockerfordevs';
         $user = 'root';
         $pass = 'docker';
         $charset = 'utf8';
         $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
         $opt = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_EMULATE_PREPARES => false,
         ];
         return new PDO($dsn, $user, $pass, $opt);
     };
     $pdo = $dic['db-driver'];
-    $dic['repo-mysql'] = function() use ($pdo) {
+    $dic['repo-mysql'] = function () use ($pdo) {
         return new MysqlUserRepository($pdo);
     };
-    $dic['repo-mem'] = function() {
+
+    $dic['repo-mem'] = function () {
         $bill = new User(
             new StringLiteral('bill@email.com'),
             new StringLiteral('harris'),

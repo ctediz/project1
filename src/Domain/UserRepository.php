@@ -6,8 +6,6 @@
  * Time: 8:37 PM
  */
 
-// why doesn't it like this?
-//namespace Project1\src\Domain;
 namespace Project1\Domain;
 
 
@@ -16,6 +14,23 @@ use Project1\Domain\User;
 
 interface UserRepository
 {
+    /**
+     * @param \Project1\Domain\User $user
+     * @return $this
+     */
+    public function add(User $user);
+
+    /**
+     * @param \Project1\Domain\StringLiteral $id
+     * @return $this
+     */
+    public function delete(StringLiteral $id);
+
+    /**
+     * @return array
+     */
+    public function findAll();
+
     /**
      * @param StringLiteral $fragment
      * @return array
@@ -41,18 +56,6 @@ interface UserRepository
     public function findByUsername(StringLiteral $username);
 
     /**
-     * @param User $user
-     * @return $this
-     */
-    public function add(User $user);
-
-    /**
-     * @param StringLiteral $id
-     * @return $this
-     */
-    public function delete(StringLiteral $id);
-
-    /**
      * @return bool
      */
     public function save();
@@ -62,9 +65,4 @@ interface UserRepository
      * @return $this
      */
     public function update(User $user);
-
-    /**
-     * @return array
-     */
-    public function findAll();
 }
