@@ -31,7 +31,7 @@ describe('Project1\src\Infrastructure\InMemoryUserRepository', function() {
         });
     });
 
-    describe('->ad()', function()
+    describe('->add()', function()
     {
         it('should return an array', function() {
             $users = $this->repo->findByEmail($this->email);
