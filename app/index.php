@@ -289,7 +289,7 @@ function bootstrap()
         return new MysqlUserRepository($pdo);
     };
 
-    $dic['redis-client'] = function () {
+    $dic['redis-client'] = function() {
         return new Predis\Client([
             'scheme' => 'tcp',
             'host'   => 'redisserver',
@@ -297,7 +297,7 @@ function bootstrap()
         ]);
     };
 
-    $dic['repo-mem'] = function () {
+    $dic['repo-mem'] = function() {
         $bill = new User(
             new StringLiteral('bill@email.com'),
             new StringLiteral('harris'),

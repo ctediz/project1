@@ -25,6 +25,7 @@ class RedisUserRepository implements UserRepository
      */
     public function __construct(Client $newClient)
     {
+        $this->client = $newClient;
     }
 
     /**
@@ -52,7 +53,7 @@ class RedisUserRepository implements UserRepository
      */
     public function findAll()
     {
-        // TODO: Implement findAll() method.
+        // TODO: Implement findAll() method
     }
 
     /**
@@ -61,12 +62,13 @@ class RedisUserRepository implements UserRepository
      */
     public function findByEmail(StringLiteral $fragment)
     {
-        // TODO: Implement findByEmail() method.
+        // TODO: Implement findByEmail() method
     }
 
     /**
      * @param StringLiteral $id
      * @return \Project1\Domain\User
+     * @throws \InvalidArgumentException
      */
     public function findById(StringLiteral $id)
     {
@@ -74,12 +76,14 @@ class RedisUserRepository implements UserRepository
         $json = $this->client->get($id->toNative());
 
         $data = json_decode($json, true);
+
         $user = new User(
             new StringLiteral($data->email),
             new StringLiteral($data->name),
             new StringLiteral($data->username)
         );
-        $user->setId($id);
+
+        $user->setId($data->id);
 
         return $user;
     }
@@ -90,7 +94,7 @@ class RedisUserRepository implements UserRepository
      */
     public function findByName(StringLiteral $fragment)
     {
-        // TODO: Implement findByName() method.
+        // TODO: Implement findByName() method
     }
 
     /**
