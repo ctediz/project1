@@ -42,6 +42,18 @@ describe('Project1\Domain\StringLiteral', function () {
             );
         });
     });
+    describe('->__construct()', function () {
+        it('should return a StringLiteral object', function () {
+            $actual = new StringLiteral('');
+
+            expect($actual)->to->be->instanceof('Project1\Domain\StringLiteral');
+        });
+        it('should return the correct string value', function () {
+            $actual = new StringLiteral('');
+
+            expect($actual->toNative())->equal('');
+        });
+    });
     describe('->__toString()', function () {
         it('should return the string "foo"', function () {
             $string = new StringLiteral('foo');

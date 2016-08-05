@@ -73,25 +73,6 @@ $app->post('/auth/', function(Request $request) use ($app) {
     // no storage - service unavailable\
 });
 
-$app->before(function (Request $request) {
-    $password = $request->getPassword();
-    $username = $request->getUser();
-
-    if ($username !== 'professor') {
-        $response = new Response();
-        $response->setStatusCode(401);
-
-        return $response;
-    }
-
-    if ($password !== '1234pass') {
-        $response = new Response();
-        $response->setStatusCode(401);
-
-        return $response;
-    }
-});
-
 $app->get('/', function () {
     return '<h1>Welcome to the Final Project</h1>';
 });
@@ -117,9 +98,13 @@ $app->get('/ping/', function() use ($dic) {
         return $response;
     }
 
-    $response->setStatusCode(200);
+    $response->setStatusCode(Response::HTTP_OK);
+    $response->headers->get('Content-Type', 'application/json');
     $msg = ['msg' => 'pong'];
     $response->setContent(json_encode($msg));
+
+    //$msg[] = $repo->findAll();
+    //$response->setContent(json_encode($msg));
 
     return $response;
 
@@ -298,12 +283,21 @@ function bootstrap()
         ];
         return new PDO($dsn, $user, $pass, $opt);
     };
+
     $pdo = $dic['db-driver'];
     $dic['repo-mysql'] = function () use ($pdo) {
         return new MysqlUserRepository($pdo);
     };
 
-    $dic['repo-mem'] = function () {
+    $dic['redis-client'] = function() {
+        return new Predis\Client([
+            'scheme' => 'tcp',
+            'host'   => 'redisserver',
+            'port'   => 6379,
+        ]);
+    };
+
+    $dic['repo-mem'] = function() {
         $bill = new User(
             new StringLiteral('bill@email.com'),
             new StringLiteral('harris'),

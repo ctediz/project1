@@ -39,6 +39,10 @@ class MysqlUserRepository implements UserRepository
     public function __construct(\PDO $driver)
     {
         $this->driver = $driver;
+
+        $stmt = "CREATE TABLE IF NOT EXISTS users (id INT(4) AUTO_INCREMENT PRIMARY KEY, email VARCHAR(30) NOT NULL, 
+                      userId VARCHAR(30) NOT NULL, name VARCHAR(30) NOT NULL, username VARCHAR(30) NOT NULL)";
+        $this->driver->exec($stmt);
     }
 
     /**
@@ -48,19 +52,21 @@ class MysqlUserRepository implements UserRepository
      */
     public function add(User $user)
     {
-        $data =json_decode(json_encode($user));
+        $data = json_decode(json_encode($user),true);
 
-        try {
-            $this->driver->prepare(
-                'INSERT INTO users VALUES (NULL,?,?,?,?)'
-            )->execute($data);
-        } catch (\PDOException $e) {
-            if ($e->getCode() === 1062) {
-                // Take some action if there is a key constraint violation, i.e. duplicate name
-            } else {
-                throw $e;
-            }
-        }
+        $email = $user->getEmail();
+        $id = $user->getId();
+        $name = $user->getName();
+        $username = $user->getUsername();
+
+        $stmt = $this->driver->prepare("INSERT INTO users (email, userId, name, username) 
+            VALUES(?,?,?,?)");
+        $stmt->bindParam(1, $email);
+        $stmt->bindParam(2, $id);
+        $stmt->bindParam(3, $name);
+        $stmt->bindParam(4, $username);
+
+        $stmt->execute();
 
         return $this;
     }
@@ -71,7 +77,10 @@ class MysqlUserRepository implements UserRepository
      */
     public function delete(StringLiteral $id)
     {
-        // TODO: Implement delete() method
+        $stmt = $this->driver->prepare("DELETE FROM users WHERE userId=?");
+        $stmt->execute([$id->toNative()]);
+        
+        return $this;
     }
 
     /**
@@ -79,43 +88,86 @@ class MysqlUserRepository implements UserRepository
      */
     public function findAll()
     {
-        // TODO: Implement findAll() method
+        $output = [];
+
+        $stmt = $this->driver->query('SELECT * FROM users');
+        foreach($stmt as $row) {
+            $output[] = $this->createUser($row);
+        }
+
+        return $output;
     }
 
     /**
-     * @param StringLiteral $fragment
+     * @param \Project1\Domain\StringLiteral $fragment
      * @return array
      */
     public function findByEmail(StringLiteral $fragment)
     {
-        // TODO: Implement findByEmail() method
+        $data = [];
+        $search = "%$fragment%";
+        $stmt = $this->driver->prepare("SELECT * FROM users WHERE email LIKE ?");
+        $stmt->execute([$search]);
+
+        while($row = $stmt->fetch())
+        {
+            $data[] = $this->createUser($row);
+        }
+        return $data;
     }
 
     /**
-     * @param StringLiteral $id
+     * @param \Project1\Domain\StringLiteral $id
      * @return \Project1\Domain\User
      */
     public function findById(StringLiteral $id)
     {
-        // TODO: Implement findById() method
+        $stmt = $this->driver->prepare("SELECT * FROM users WHERE userId=?");
+        $stmt->execute([$id->toNative()]);
+
+        $userData = $stmt->fetch();
+        if($userData)
+            $user = $this->createUser($userData);
+        else
+            return;
+
+        return $user;
     }
 
     /**
-     * @param StringLiteral $fragment
+     * @param \Project1\Domain\StringLiteral $fragment
      * @return array
      */
     public function findByName(StringLiteral $fragment)
     {
-        // TODO: Implement findByName() method
+        $data = [];
+        $search = "%$fragment%";
+        $stmt = $this->driver->prepare("SELECT * FROM users WHERE name LIKE ?");
+        $stmt->execute([$search]);
+
+        while($row = $stmt->fetch())
+        {
+            $data[] = $this->createUser($row);
+        }
+        return $data;
     }
 
     /**
-     * @param StringLiteral $username
+     * @param \Project1\Domain\StringLiteral $username
      * @return array
      */
     public function findByUsername(StringLiteral $username)
     {
-        // TODO: Implement findByUsername() method
+        $data = [];
+        $search = "%$username%";
+        $stmt = $this->driver->prepare("SELECT * FROM users WHERE username LIKE ?");
+        $stmt->execute([$search]);
+
+        while($row = $stmt->fetch())
+        {
+            $data[] = $this->createUser($row);
+        }
+        return $data;
     }
 
     /**
@@ -123,7 +175,7 @@ class MysqlUserRepository implements UserRepository
      */
     public function save()
     {
-        // TODO: Implement save() method
+        return true;
     }
 
     /**
@@ -132,6 +184,25 @@ class MysqlUserRepository implements UserRepository
      */
     public function update(User $user)
     {
-        // TODO: Implement update() method
+        $this->delete($user->getId());
+        $this->add($user);
+
+        return $this;
+    }
+
+    /**
+     * @param array $userArray
+     * @return User
+     */
+    private function createUser(array $userArray) {
+        if ($userArray['userId']) {
+            $user = new User(
+                new StringLiteral($userArray['email']),
+                new StringLiteral($userArray['name']),
+                new StringLiteral($userArray['username'])
+            );
+            $user->setId(new StringLiteral($userArray['userId']));
+        }
+        return $user;
     }
 }

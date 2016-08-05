@@ -74,7 +74,6 @@ class InMemoryUserRepository implements UserRepository
      */
     public function findById(StringLiteral $id)
     {
-        /** @var  $user */
         /** @var \Project1\Domain\User $user */
         foreach($this->storage as $user) {
             if ($id->equal($user->getId())) {
@@ -127,6 +126,10 @@ class InMemoryUserRepository implements UserRepository
         return $responseStorage;
     }
 
+    /**
+     * @param StringLiteral $id
+     * @return $this
+     */
     public function delete(StringLiteral $id)
     {
         for($i = 0; $i < $this->count(); $i++) {

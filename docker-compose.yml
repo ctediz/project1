@@ -3,9 +3,9 @@ services:
   phpserver:
     build: ./docker/php
     volumes:
-      - /Users/stringhamdb/Sandbox/project1/app:/var/www/html
-      - /Users/stringhamdb/Sandbox/project1/vendor:/var/www/vendor
-      - /Users/stringhamdb/Sandbox/project1/src:/var/www/src
+      - C:\Users\Jason\Documents\project1\app:/var/www/html
+      - C:\Users\Jason\Documents\project1\vendor:/var/www/vendor
+      - C:\Users\Jason\Documents\project1\src:/var/www/src
     links:
       - mysqlserver
       - redisserver
@@ -22,6 +22,8 @@ services:
     image: redis
     volumes:
       - /data
+    ports:
+    - "6379:6379"
   nginx:
     build: ./docker/nginx
     ports:
