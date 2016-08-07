@@ -105,9 +105,9 @@ class MysqlUserRepository implements UserRepository
     public function findByEmail(StringLiteral $fragment)
     {
         $data = [];
-        $search = "%$fragment%";
+        $search = ["%$fragment%"];
         $stmt = $this->driver->prepare("SELECT * FROM users WHERE email LIKE ?");
-        $stmt->execute([$search]);
+        $stmt->execute($search);
 
         while($row = $stmt->fetch())
         {

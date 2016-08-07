@@ -53,7 +53,14 @@ class RedisUserRepository implements UserRepository
      */
     public function findAll()
     {
-        // TODO: Implement findAll() method
+        $output = [];
+        
+        //$result = $this->client->scan(0);
+        $result = $this->client->keys('*');
+        foreach($result as $key) {
+            $output[] = $this->findById(new StringLiteral($key));
+        }
+        return $output;
     }
 
     /**
@@ -62,7 +69,17 @@ class RedisUserRepository implements UserRepository
      */
     public function findByEmail(StringLiteral $fragment)
     {
-        // TODO: Implement findByEmail() method
+        $output = [];
+        $data = $this->findAll();
+
+        /** @var \Project1\Domain\User $user */
+        foreach($data as $user) {
+            $match = stripos($user->getEmail()->toNative(), $fragment->toNative());
+            if(!($match === false))
+                $output[] = $user;
+        }
+
+        return $output;
     }
 
     /**
@@ -75,17 +92,19 @@ class RedisUserRepository implements UserRepository
         /** @var string $json */
         $json = $this->client->get($id->toNative());
 
-        $data = json_decode($json, true);
+        $data = json_decode($json);
 
-        $user = new User(
-            new StringLiteral($data->email),
-            new StringLiteral($data->name),
-            new StringLiteral($data->username)
-        );
+        if (!($data === null)) {
+            $user = new User(
+                new StringLiteral($data->email),
+                new StringLiteral($data->name),
+                new StringLiteral($data->username)
+            );
+            $user->setId(new StringLiteral($data->id));
+            return $user;
+        }
 
-        $user->setId($data->id);
-
-        return $user;
+        return null;
     }
 
     /**
@@ -94,7 +113,17 @@ class RedisUserRepository implements UserRepository
      */
     public function findByName(StringLiteral $fragment)
     {
-        // TODO: Implement findByName() method
+        $output = [];
+        $data = $this->findAll();
+
+        /** @var \Project1\Domain\User $user */
+        foreach($data as $user) {
+            $match = stripos($user->getName()->toNative(), $fragment->toNative());
+            if(!($match === false))
+                $output[] = $user;
+        }
+
+        return $output;
     }
 
     /**
@@ -103,7 +132,17 @@ class RedisUserRepository implements UserRepository
      */
     public function findByUsername(StringLiteral $username)
     {
-        // TODO: Implement findByUsername() method.
+        $output = [];
+        $data = $this->findAll();
+
+        /** @var \Project1\Domain\User $user */
+        foreach($data as $user) {
+            $match = stripos($user->getUsername()->toNative(), $username->toNative());
+            if(!($match === false))
+                $output[] = $user;
+        }
+
+        return $output;
     }
 
     /**

@@ -29,14 +29,15 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
     $faker = Faker\Factory::create();
     /** @var \Project1\Domain\User user */
     $this->user = new User(
-        //$this->email = new StringLiteral($faker->email),
-        $this->email = new StringLiteral("test@email.com"),
+        $this->email = new StringLiteral($faker->email),
         $this->name = new StringLiteral($faker->name),
         $this->username = new StringLiteral($faker->username)
     );
     $this->id = new StringLiteral('testId');
+    //die("".var_dump($this->email));
 
     $this->user->setId($this->id);
+    $this->count = count($this->repo->findAll());
 
     describe('->__constructor()', function() {
         it('should return a MysqlUserRepository', function() {
@@ -48,12 +49,11 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
         it('should add a user', function() {
             $this->repo->add($this->user);
 
-            it('should return a matching user', function() {
-                $result = $this->repo->findById($this->id);
+            $result = $this->repo->findById($this->id);
+            //die(var_dump($result)."");
 
-                expect($result)->to->be->instanceof('\Project1\Domain\User');
-                expect($result->getId()->equal($this->user->getId()))->to->be->true;
-            });
+            expect($result)->to->be->instanceof('\Project1\Domain\User');
+            expect($result->getId()->equal($this->user->getId()))->to->be->true;
 
         });
     });
@@ -62,9 +62,10 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
             $result = $this->repo->findAll();
 
             expect($result)->to->be->an('array');
+            expect(count($result))->to->equal($this->count + 1);
         });
     });
-    describe('findByEmail(StringLiteral email)', function() {
+    describe('findByEmail(email)', function() {
         it('should return an array of users', function() {
             $result = $this->repo->findByEmail($this->email);
 
@@ -83,18 +84,18 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
     });
     describe('findById(id)', function() {
         it('should return a matching user', function() {
-            //$result = $this->repo->findById($this->id);
+            $result = $this->repo->findById($this->id);
 
-            //expect($result)->to->be->instanceof('\Project1\Domain\User');
-            //expect($result->getId()->equal($this->user->getId()))->to->be->true;
-            //expect($result->getId()->equal($this->id))->to->be->true;
+            expect($result)->to->be->instanceof('\Project1\Domain\User');
+            expect($result->getId()->equal($this->user->getId()))->to->be->true;
+            expect($result->getId()->equal($this->id))->to->be->true;
         });
     });
     describe('findById(-1)', function() {
         it('should return null', function() {
-            //$result = $this->repo->findById(new StringLiteral('-1'));
+            $result = $this->repo->findById(new StringLiteral('-1'));
 
-            //expect($result)->to->be->equal(null);
+            expect($result)->to->be->equal(null);
         });
     });
     describe('findByName()', function() {
@@ -109,7 +110,7 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
     describe('findByUsername()', function() {
         it('should return an array of users', function() {
             $result = $this->repo->findByUsername($this->username);
-
+            //die("".var_dump($result));
             expect($result)->to->be->an('array');
             expect($result[0])->to->be->instanceof('\Project1\Domain\User');
             expect($result[0]->getId()->equal($this->user->getId()))->to->be->true;
@@ -135,7 +136,7 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
             $user->setId($this->user->getId());
             $this->repo->update($user);
 
-            /** @var \Project1\Domain\User $result */
+
             $result = $this->repo->findById($this->user->getId());
             expect($this->id)->to->equal($user->getId());
             expect($email)->to->equal($user->getEmail());
@@ -147,11 +148,9 @@ describe('Project1\src\Infrastructure\MysqlUserRepository', function() {
     describe('->delete(id)', function() {
         it('should delete the specified user from the repo', function() {
             $this->repo->delete($this->id);
-            it('should return null', function() {
-                $result = $this->repo->findById($this->id);
+            $result = $this->repo->findById($this->id);
 
-                expect($result)->to->be->equal(null);
-            });
+            expect($result)->to->be->equal(null);
         });
     });
 });
