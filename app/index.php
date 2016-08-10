@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Pimple\Container;
 use Project1\Infrastructure\InMemoryUserRepository;
 use Project1\Infrastructure\MysqlUserRepository;
+use Project1\Infrastructure\RedisUserRepository;
 use Project1\Domain\StringLiteral;
 use Project1\Domain\User;
 
@@ -25,7 +26,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $dic = bootstrap();
 
 $app = $dic['app'];
-//$app['debug'] = true;
+$app['debug'] = true;
 
 $app->get('/', function () use ($app) {
     return '<h1>Welcome to the Final Project</h1>';
@@ -69,8 +70,6 @@ $app->post('/auth/', function(Request $request) use ($app) {
         $response->setContent("Missing property: username");
         return $response;
     }
-
-    // no storage - service unavailable\
 });
 
 $app->get('/', function () {
@@ -113,7 +112,8 @@ $app->get('/ping/', function() use ($dic) {
 $app->get('/users/', function () use ($dic) {
     $response = new Response();
     $response->headers->get('Content-Type', 'application/json');
-    $repo = $dic['repo-mem'];
+    //$repo = $dic['repo-mysql'];
+    $repo = $dic['repo-redis'];
     $response->setStatusCode(200);
     $response->setContent(json_encode($repo->findAll()));
     return $response;
@@ -123,10 +123,13 @@ $app->get('/users/', function () use ($dic) {
 $app->get('/users/{id}', function ($id) use ($dic) {
     $response = new Response();
     $response->headers->get('Content-Type', 'application/json');
-    $repo = $dic['repo-mem'];
+    //$repo = $dic['repo-mem'];
+    $repo = $dic['repo-mysql'];
     $user = $repo->findById(new StringLiteral($id));
     if ($user === null) {
+        $msg = ["msg", "Could not find user $id"];
         $response->setStatusCode(404);
+        $response->setContent(json_encode($msg));
         return $response;
     }
     $response->setStatusCode(200);
@@ -138,7 +141,17 @@ $app->get('/users/{id}', function ($id) use ($dic) {
 $app->delete('/users/{id}', function($id) use($dic) {
     $response = new Response();
     $response->headers->get('Content-Type', 'application/json');
-    $repo = $dic['repo-mem'];
+    //$repo = $dic['repo-mem'];
+    $repo = $dic['repo-mysql'];
+
+    $result = $repo->findById(new StringLiteral($id));
+    if($result === null) {
+        $response->setStatusCode(Response::HTTP_NOT_FOUND);
+        $msg = ["msg", "Could not find user $id"];
+        $response->setContent(json_encode($msg));
+        return $response;
+    }
+
     $result = $repo->delete(new StringLiteral($id))->save();
     if ($result === false) {
         $response->setStatusCode(500);
@@ -155,20 +168,25 @@ $app->post('/users/', function(Request $request) use ($dic) {
 
     $arrRequest = json_decode($request->getContent(),true);
 
-    if($arrRequest['email'] && $arrRequest['username'] && $arrRequest['name']) {
-        $repo = $dic['repo-mem'];
+    if($arrRequest['email'] && $arrRequest['username'] && $arrRequest['name'] && $arrRequest['id']) {
+        //$repo = $dic['repo-mem'];
+        $repoMySQL = $dic['repo-mysql'];
+        $repoRedis = $dic['repo-redis'];
         $email = $arrRequest['email'];
         $username = $arrRequest['username'];
         $name = $arrRequest['name'];
+        $id = $arrRequest['id'];
 
         $user = new User(new StringLiteral($email),
             new StringLiteral($name),
             new StringLiteral($username)
         );
+        $user->setId(new StringLiteral($id));
 
-        $repo->add($user);
+        //$repo->add($user);
+        $repoMySQL->add($user);
+        $repoRedis->add($user);
 
-        // id?
         $response->setStatusCode(Response::HTTP_CREATED);
         $response->setContent(json_encode($user));
     }
@@ -185,34 +203,36 @@ $app->post('/users/', function(Request $request) use ($dic) {
 $app->put('/users/{id}', function($id, Request $request) use($dic) {
     $response = new Response();
     $response->headers->get('Content-Type', 'application/json');
-    $repo = $dic['repo-mem'];
+    //$repo = $dic['repo-mem'];
+    $repoMySQL = $dic['repo-mysql'];
+    $repoRedis = $dic['repo-redis'];
 
-    $arrRequest = json_decode($request->getContent(),true);
+    $arrRequest = json_decode($request->getContent(), true);
 
     /** @var  $user Project1\Domain\User*/
-    $user = $repo->findById(new StringLiteral($id));
+    $user = $repoMySQL->findById(new StringLiteral($id));
 
     if($user === NULL) {
         $response->setStatusCode(Response::HTTP_NOT_FOUND);
-        $msg['msg'] = "Could not find $id";
+        $msg['msg'] = "Could not find user $id";
         $response->setContent(json_encode($msg));
         return $response;
     }
     else {
         // get old values
-        $email = $user->getEmail();
-        $username = $user->getUsername();
-        $name = $user->getName();
+        $email = $user->getEmail()->toNative();
+        $username = $user->getUsername()->toNative();
+        $name = $user->getName()->toNative();
     }
 
     // replace old values if new exist
-    if(!empty($arrRequest['email'])) {
+    if(key_exists('email', $arrRequest)) {
         $email = $arrRequest['email'];
     }
-    if(!empty($arrRequest['username'])) {
+    if(key_exists('username', $arrRequest)) {
         $username = $arrRequest['username'];
     }
-    if(!empty($arrRequest['name'])) {
+    if(key_exists('name', $arrRequest)) {
         $name = $arrRequest['name'];
     }
 
@@ -222,7 +242,8 @@ $app->put('/users/{id}', function($id, Request $request) use($dic) {
         new StringLiteral($name),
         new StringLiteral($username));
     $newUser->setId(new StringLiteral($id));
-    $repo->update($newUser)->save();
+    $repoMySQL->update($newUser)->save();
+    $repoRedis->update($newUser)->save();
 
     $response->setStatusCode(Response::HTTP_OK);
     return $response;
@@ -295,6 +316,10 @@ function bootstrap()
             'host'   => 'redisserver',
             'port'   => 6379,
         ]);
+    };
+    $client = $dic['redis-client'];
+    $dic['repo-redis'] = function() use ($client) {
+        return new RedisUserRepository($client);
     };
 
     $dic['repo-mem'] = function() {
